@@ -7,6 +7,8 @@ from starlette.responses import Response
 from app.core.config import settings
 from app.routers.plots import router as plots_router
 from app.routers.beds import router as beds_router
+from app.routers.spatial_maps import router as spatial_maps_router  # ✅ add
+from app.routers.rover import router as rover_router                # ✅ add
 from app.services.plots import init_indexes
 
 app = FastAPI(title="Florisys Backend")
@@ -31,17 +33,14 @@ app.add_middleware(
 async def add_file_headers(request: Request, call_next):
     response: Response = await call_next(request)
     if request.url.path.startswith("/files/"):
-        # CORS and cross-origin resource policy for WebGL textures
         origin = request.headers.get("Origin")
         response.headers.setdefault("Access-Control-Allow-Origin", origin or origins[0])
         response.headers.setdefault("Cross-Origin-Resource-Policy", "cross-origin")
-        # Helpful for range-based clients (OpenLayers GeoTIFF)
         response.headers.setdefault("Accept-Ranges", "bytes")
-        # Reduce caching surprises in dev
         response.headers.setdefault("Cache-Control", "no-store")
     return response
 
-# Serve GeoTIFF files
+# Serve GeoTIFFs and PLYs from the same folder
 app.mount("/files", StaticFiles(directory=settings.files_dir), name="files")
 
 @app.on_event("startup")
@@ -55,3 +54,5 @@ async def health():
 # API routers
 app.include_router(plots_router)
 app.include_router(beds_router)
+app.include_router(spatial_maps_router)  # ✅ add
+app.include_router(rover_router)         # ✅ add

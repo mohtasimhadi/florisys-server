@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 from fastapi import HTTPException, status
 from app.db.mongo import get_db
+from app.core.config import settings
 from app.models.bed import BedInDB
 
 def _close_ring(coords: list[list[float]]) -> list[list[float]]:
@@ -48,7 +49,35 @@ async def update_bed(plot_id: str, bed_id: str, name: Optional[str], coordinates
     return bed
 
 async def delete_bed(plot_id: str, bed_id: str) -> None:
+    # best-effort: delete any PLY files attached to this bed
+    from pathlib import Path
     db = get_db()
+    p = await db.plots.find_one({"id": plot_id}, {"_id": 0, "beds": 1})
+    if not p:
+        raise HTTPException(status_code=404, detail="Plot not found")
+    bed = next((b for b in p.get("beds", []) if b["id"] == bed_id), None)
+    if not bed:
+        # Align with old behavior:
+        # update_one below will give matched_count==0 → Plot not found,
+        # but we know the plot exists; let's surface 404 Bed for clarity.
+        raise HTTPException(status_code=404, detail="Bed not found")
+
+    for m in bed.get("spatialMaps", []):
+        try:
+            Path(settings.files_dir, m["filename"]).unlink(missing_ok=True)
+        except Exception:
+            pass
+
     res = await db.plots.update_one({"id": plot_id}, {"$pull": {"beds": {"id": bed_id}}})
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Plot not found")
+
+async def get_bed_by_id(plot_id: str, bed_id: str) -> dict:
+    db = get_db()
+    p = await db.plots.find_one({"id": plot_id}, {"_id": 0, "beds": 1})
+    if not p:
+        raise HTTPException(status_code=404, detail="Plot not found")
+    bed = next((b for b in p.get("beds", []) if b["id"] == bed_id), None)
+    if not bed:
+        raise HTTPException(status_code=404, detail="Bed not found")
+    return bed

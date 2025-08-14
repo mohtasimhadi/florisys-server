@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from app.models.bed import BedOut
 from app.services.beds import list_beds, create_bed, update_bed, delete_bed
+from app.services.beds import get_bed_by_id  # ✅ add
 
 router = APIRouter(prefix="/plots/{plot_id}/beds", tags=["beds"])
 
@@ -18,6 +19,11 @@ class BedUpdate(BaseModel):
 @router.get("", response_model=List[BedOut])
 async def get_beds(plot_id: str):
   return await list_beds(plot_id)
+
+# ✅ NEW: get a single bed
+@router.get("/{bed_id}", response_model=BedOut)
+async def get_bed(plot_id: str, bed_id: str):
+  return await get_bed_by_id(plot_id, bed_id)
 
 @router.post("", response_model=BedOut, status_code=201)
 async def post_bed(plot_id: str, body: BedCreate):

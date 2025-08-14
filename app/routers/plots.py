@@ -1,5 +1,5 @@
-from fastapi import APIRouter, File, UploadFile, Depends, Request
-from fastapi import Response, status
+# app/routers/plots.py
+from fastapi import APIRouter, File, UploadFile, Request, Response, status
 from typing import List
 from app.models.plot import PlotOut
 from app.services.plots import list_plots, create_plot, delete_plot
