@@ -1,15 +1,3 @@
-Here’s a **`README.md`** you can drop in your project root.
-I’ve included:
-
-* All backend API endpoints (from the bed/plot/spatial map functionality you described earlier).
-* Setup & installation steps.
-* Running locally & with Docker.
-* Example API requests.
-* A note on future AI integration.
-
----
-
-````markdown
 # Florisys Backend API
 
 This is the backend API for **Florisys**, providing endpoints for:
@@ -62,7 +50,6 @@ It is designed to work with the **Florisys Next.js frontend**.
 ```bash
 git clone https://github.com/your-username/florisys-backend.git
 cd florisys-backend
-````
 
 ### 2. Create & activate a virtual environment
 
