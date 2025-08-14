@@ -1,7 +1,8 @@
 # app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
+from starlette.responses import Response
 from app.core.config import settings
 from app.routers.plots import router as plots_router
 from app.services.plots import init_indexes
@@ -22,6 +23,20 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Add explicit headers for static file responses (WebGL-friendly)
+@app.middleware("http")
+async def add_file_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    if request.url.path.startswith("/files/"):
+        # CORS and cross-origin resource policy for WebGL textures
+        response.headers.setdefault("Access-Control-Allow-Origin", request.headers.get("Origin", origins[0]))
+        response.headers.setdefault("Cross-Origin-Resource-Policy", "cross-origin")
+        # Helpful for range-based clients (OpenLayers GeoTIFF)
+        response.headers.setdefault("Accept-Ranges", "bytes")
+        # Reduce caching surprises in dev
+        response.headers.setdefault("Cache-Control", "no-store")
+    return response
 
 app.mount("/files", StaticFiles(directory=settings.files_dir), name="files")
 
